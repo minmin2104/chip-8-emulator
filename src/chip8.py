@@ -39,7 +39,5 @@ class Chip8:
         # Fetch Opcode
         # Decode Opcode
         # Execute Opcode
-
         # Handle timer
-        pass
         pass
