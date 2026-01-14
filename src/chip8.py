@@ -40,8 +40,16 @@ class Chip8:
         for i in range(80):
             self.memory[i] = self.__CHIP8_FONTSET[i]
 
-    def load_ROM(self, program):
-        pass
+    def load_ROM(self, program_path):
+        with open(program_path, "rb") as f:
+            byte = f.read(1)
+            i = 512  # 0x200
+            while byte:
+                if i >= self.__MEM_SIZE and byte:
+                    raise Exception("ROM exceed memory capacity of 4KB")
+                self.memory[i] = byte[0]
+                i += 1
+                byte = f.read(1)
 
     def emulate_cycle(self):
         # Fetch Opcode
