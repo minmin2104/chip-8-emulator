@@ -1,5 +1,8 @@
 class Chip8:
     __NUM_OF_REGISTERS = 16
+    __NUM_OF_KEYS = 16
+    __LEVEL_OF_STACK = 16
+    __MEM_SIZE = 4096
     __CHIP8_FONTSET = [
             0xF0, 0x90, 0x90, 0x90, 0xF0,  # 0
             0x20, 0x60, 0x20, 0x20, 0x70,  # 1
@@ -19,18 +22,18 @@ class Chip8:
             0xF0, 0x80, 0xF0, 0x80, 0x80   # F
             ]
 
-    def __init__(self):
+    def __init__(self, win_h, win_w):
         self.opcode = 0x0
-        self.memory = []
+        self.memory = [0] * self.__MEM_SIZE
         self.V = [0] * self.__NUM_OF_REGISTERS
         self.IR = 0x0
         self.PC = 0x200
-        self.gfx = []
+        self.gfx = [0] * (win_h * win_w)
         self.delay_timer = 0
         self.sound_timer = 0
-        self.stack = []
+        self.stack = [0] * self.__LEVEL_OF_STACK
         self.sp = 0x0
-        self.key = []
+        self.key = [0] * self.__NUM_OF_KEYS
 
     def load_ROM(self, program):
         pass
