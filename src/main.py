@@ -68,11 +68,4 @@ if __name__ == "__main__":
                     if event.key == key_code:
                         chip_8.key[i] = 0
 
-        # Handle timer
-        if chip_8.delay_timer > 0:
-            chip_8.delay_timer -= 1
-        if chip_8.sound_timer > 0:
-            chip_8.sound_timer -= 1
-            if chip_8.sound_timer == 0:
-                print("BEEP!")
         clock.tick(833)
