@@ -98,7 +98,6 @@ class Chip8:
                             if self.key[i]:
                                 self.V[x_reg] = i
                                 key_pressed = True
-                                break
                         if not key_pressed:
                             return
                         self.PC += 2
@@ -140,13 +139,12 @@ class Chip8:
                         x_coord = (self.V[x_reg] + col)
                         y_coord = (self.V[y_reg] + row)
                         # If the pixel exist in memory, render the pixel
-                        if 0 <= x_coord < 64 and 0 <= y_coord < 32:
-                            if pixel & (0x80 >> col):
-                                # If the pixel is in the display, set VF for collision detection
-                                pix_loc = x_coord + (y_coord * 64)
-                                if self.gfx[pix_loc]:
-                                    self.V[0xF] = 1
-                                self.gfx[pix_loc] ^= 1
+                        if pixel & (0x80 >> col):
+                            # If the pixel is in the display, set VF for collision detection
+                            pix_loc = x_coord + (y_coord * 64)
+                            if self.gfx[pix_loc]:
+                                self.V[0xF] = 1
+                            self.gfx[pix_loc] ^= 1
                 self.draw_flag = True
                 self.PC += 2
             case 0x0:
@@ -161,7 +159,7 @@ class Chip8:
             case 0x1:
                 self.PC = nnn
             case 0x2:
-                self.stack[self.sp] = self.PC + 2
+                self.stack[self.sp] = self.PC
                 self.sp += 1
                 self.PC = nnn
             case 0x3:
