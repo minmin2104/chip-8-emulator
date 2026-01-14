@@ -25,16 +25,14 @@ class Chip8:
             0xF0, 0x80, 0xF0, 0x80, 0x80   # F
             ]
 
-    def __init__(self, win_h, win_w):
-        self.win_h = win_h
-        self.win_w = win_w
+    def __init__(self):
         self.draw_flag = False
         self.opcode = 0x0
         self.memory = [0] * self.__MEM_SIZE
         self.V = [0] * self.__NUM_OF_REGISTERS
         self.IR = 0x0
         self.PC = 0x200
-        self.gfx = [0] * (win_h * win_w)
+        self.gfx = [0] * (64 * 32)
         self.delay_timer = 0
         self.sound_timer = 0
         self.stack = [0] * self.__LEVEL_OF_STACK
@@ -78,23 +76,21 @@ class Chip8:
                         self.IR = self.IR + self.V[x_reg]
                         self.PC += 2
                     case 0x33:
-                        self.memory[self.IR + 0] = bin(self.V[x_reg] // 100)
-                        self.memory[self.IR + 1] = bin(self.V[x_reg] % 100 // 10)
-                        self.memory[self.IR + 2] = bin(self.V[x_reg] % 10)
+                        self.memory[self.IR + 0] = self.V[x_reg] // 100
+                        self.memory[self.IR + 1] = self.V[x_reg] % 100 // 10
+                        self.memory[self.IR + 2] = self.V[x_reg] % 10
                         self.PC += 2
                     case 0x55:
-                        idx = self.IR
                         for i in range(x_reg + 1):
                             reg_val = self.V[i]
-                            self.memory[idx] = reg_val
-                            idx += 1
+                            self.memory[self.IR + i] = reg_val
+                        self.IR += x_reg + 1
                         self.PC += 2
                     case 0x65:
-                        idx = self.IR
                         for i in range(x_reg + 1):
-                            reg_val = self.memory[idx]
+                            reg_val = self.memory[self.IR + i]
                             self.V[i] = reg_val
-                            idx += 1
+                        self.IR += x_reg + 1
                         self.PC += 2
                     case 0x0A:
                         key_pressed = False
@@ -102,6 +98,7 @@ class Chip8:
                             if self.key[i]:
                                 self.V[x_reg] = i
                                 key_pressed = True
+                                break
                         if not key_pressed:
                             return
                         self.PC += 2
@@ -140,7 +137,9 @@ class Chip8:
                 for row in range(n):
                     pixel = self.memory[self.IR + row]
                     for col in range(8):
-                        pix_loc = x_reg + col + ((y_reg + row) * self.win_w)
+                        x_coord = (self.V[x_reg] + col) % 64
+                        y_coord = (self.V[y_reg] + row) % 32
+                        pix_loc = x_coord + (y_coord * 64)
                         # If the pixel exist in memory, render the pixel
                         if pixel & (0x80 >> col):
                             # If the pixel is in the display, set VF for collision detection
@@ -154,31 +153,41 @@ class Chip8:
                     case 0x0EE:
                         self.sp -= 1
                         self.PC = self.stack[self.sp]
+                        self.PC += 2
                     case 0x0E0:
                         self.gfx = [0 for _ in self.gfx]
+                        self.PC += 2
             case 0x1:
                 self.PC = nnn
             case 0x2:
-                self.stack[self.sp] = self.PC
+                self.stack[self.sp] = self.PC + 2
                 self.sp += 1
                 self.PC = nnn
             case 0x3:
                 if self.V[x_reg] == nn:
                     self.PC += 4
+                else:
+                    self.PC += 2
             case 0x4:
                 if self.V[x_reg] != nn:
                     self.PC += 4
+                else:
+                    self.PC += 2
             case 0x5:
                 if self.V[x_reg] == self.V[y_reg]:
                     self.PC += 4
+                else:
+                    self.PC += 2
             case 0x9:
                 if self.V[x_reg] != self.V[y_reg]:
                     self.PC += 4
+                else:
+                    self.PC += 2
             case 0x6:
                 self.V[x_reg] = nn
                 self.PC += 2
             case 0x7:
-                self.V[x_reg] = self.V[x_reg] + nn
+                self.V[x_reg] = (self.V[x_reg] + nn) & 0xFF
                 self.PC += 2
             case 0x8:
                 match n:
@@ -200,35 +209,29 @@ class Chip8:
                             self.V[0xF] = 1
                         else:
                             self.V[0xF] = 0
+                        self.V[x_reg] = sum_xy & 0xFF
                         self.PC += 2
                     case 0x5:
                         if self.V[x_reg] >= self.V[y_reg]:
                             self.V[0xF] = 1
                         else:
                             self.V[0xF] = 0
-                        self.V[x_reg] = self.V[x_reg] - self.V[y_reg]
+                        self.V[x_reg] = (self.V[x_reg] - self.V[y_reg]) & 0xFF
                         self.PC += 2
                     case 0x7:
                         if self.V[y_reg] >= self.V[x_reg]:
                             self.V[0xF] = 1
                         else:
                             self.V[0xF] = 0
-                        self.V[x_reg] = self.V[y_reg] - self.V[x_reg]
+                        self.V[x_reg] = (self.V[y_reg] - self.V[x_reg]) & 0xFF
                         self.PC += 2
                     case 0x6:
                         self.V[0xF] = self.V[x_reg] & 0x01
                         self.V[x_reg] = self.V[x_reg] >> 1
                         self.PC += 2
                     case 0xE:
-                        self.V[0xF] = (self.V[x_reg] & 0x80) >> 1
+                        self.V[0xF] = (self.V[x_reg] & 0x80) >> 7
                         self.V[x_reg] = (self.V[x_reg] << 1) & 0xFF
                         self.PC += 2
             case _:
                 print(f"Unknown Opcode: {self.opcode}")
-        # Handle timer
-        if self.delay_timer > 0:
-            self.delay_timer -= 1
-        if self.sound_timer > 0:
-            self.sound_timer -= 1
-            if self.sound_timer == 0:
-                print("BEEP!")
