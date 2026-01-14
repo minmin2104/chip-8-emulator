@@ -40,7 +40,25 @@ class Chip8:
 
     def emulate_cycle(self):
         # Fetch Opcode
+        self.opcode = (self.memory[self.PC] << 8) | (self.memory[self.PC + 1])
         # Decode Opcode
+        operator = (self.opcode & 0xF000) >> 12
+        x_reg = (self.opcode & 0x0F00) >> 8
+        y_reg = (self.opcode & 0x00F0) >> 4
+        nnn = (self.opcode & 0x0FFF)
+        nn = (self.opcode & 0x00FF)
+        n = (self.opcode & 0x000F)
         # Execute Opcode
+        match operator:
+            case 0xA:
+                self.IR = nnn
+                self.PC += 2
+            case _:
+                print(f"Unknown Opcode: {self.opcode}")
         # Handle timer
-        pass
+        if self.delay_timer > 0:
+            self.delay_timer -= 1
+        if self.sound_timer > 0:
+            self.sound_timer -= 1
+            if self.sound_timer == 0:
+                print("BEEP!")
