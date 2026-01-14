@@ -136,8 +136,8 @@ class Chip8:
                 for row in range(n):
                     pixel = self.memory[self.IR + row]
                     for col in range(8):
-                        x_coord = (self.V[x_reg] + col)
-                        y_coord = (self.V[y_reg] + row)
+                        x_coord = (self.V[x_reg] + col) % 64
+                        y_coord = (self.V[y_reg] + row) % 32
                         # If the pixel exist in memory, render the pixel
                         if pixel & (0x80 >> col):
                             # If the pixel is in the display, set VF for collision detection
