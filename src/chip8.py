@@ -76,14 +76,14 @@ class Chip8:
                         self.IR = self.IR + self.V[x_reg]
                         self.PC += 2
                     case 0x33:
-                        self.memory[self.IR + 0] = self.V[x_reg] // 100
-                        self.memory[self.IR + 1] = self.V[x_reg] % 100 // 10
-                        self.memory[self.IR + 2] = self.V[x_reg] % 10
+                        self.memory[self.IR + 0] = (self.V[x_reg] // 100) & 0XFF
+                        self.memory[self.IR + 1] = (self.V[x_reg] % 100 // 10) & 0XFF
+                        self.memory[self.IR + 2] = (self.V[x_reg] % 10) & 0XFF
                         self.PC += 2
                     case 0x55:
                         for i in range(x_reg + 1):
                             reg_val = self.V[i]
-                            self.memory[self.IR + i] = reg_val
+                            self.memory[self.IR + i] = reg_val & 0XFF
                         self.IR += x_reg + 1
                         self.PC += 2
                     case 0x65:
@@ -103,7 +103,7 @@ class Chip8:
                             return
                         self.PC += 2
                     case 0x07:
-                        self.V[x_reg] = self.delay_timer
+                        self.V[x_reg] = self.delay_timer & 0xFF
                         self.PC += 2
                     case 0x15:
                         self.delay_timer = self.V[x_reg]
@@ -130,22 +130,23 @@ class Chip8:
                 addr = nnn + self.V[0]
                 self.PC = addr
             case 0xC:
-                self.V[x_reg] = random.randbytes(1)[0] & nn
+                self.V[x_reg] = random.randint(0, 255) & nn
                 self.PC += 2
             case 0xD:
                 self.V[0xF] = 0
                 for row in range(n):
                     pixel = self.memory[self.IR + row]
                     for col in range(8):
-                        x_coord = (self.V[x_reg] + col) % 64
-                        y_coord = (self.V[y_reg] + row) % 32
-                        pix_loc = x_coord + (y_coord * 64)
+                        x_coord = (self.V[x_reg] + col)
+                        y_coord = (self.V[y_reg] + row)
                         # If the pixel exist in memory, render the pixel
-                        if pixel & (0x80 >> col):
-                            # If the pixel is in the display, set VF for collision detection
-                            if self.gfx[pix_loc]:
-                                self.V[0xF] = 1
-                            self.gfx[pix_loc] ^= 1
+                        if 0 <= x_coord < 64 and 0 <= y_coord < 32:
+                            if pixel & (0x80 >> col):
+                                # If the pixel is in the display, set VF for collision detection
+                                pix_loc = x_coord + (y_coord * 64)
+                                if self.gfx[pix_loc]:
+                                    self.V[0xF] = 1
+                                self.gfx[pix_loc] ^= 1
                 self.draw_flag = True
                 self.PC += 2
             case 0x0:
@@ -226,12 +227,21 @@ class Chip8:
                         self.V[x_reg] = (self.V[y_reg] - self.V[x_reg]) & 0xFF
                         self.PC += 2
                     case 0x6:
-                        self.V[0xF] = self.V[x_reg] & 0x01
+                        self.V[x_reg] = self.V[y_reg]
+                        self.V[0xF] = self.V[x_reg] & 0x1
                         self.V[x_reg] = self.V[x_reg] >> 1
                         self.PC += 2
                     case 0xE:
+                        self.V[x_reg] = self.V[y_reg]
                         self.V[0xF] = (self.V[x_reg] & 0x80) >> 7
                         self.V[x_reg] = (self.V[x_reg] << 1) & 0xFF
                         self.PC += 2
             case _:
                 print(f"Unknown Opcode: {self.opcode}")
+
+        # Handle timer
+        if self.delay_timer > 0:
+            self.delay_timer -= 1
+
+        if self.sound_timer > 0:
+            self.sound_timer -= 1
