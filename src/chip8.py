@@ -34,6 +34,11 @@ class Chip8:
         self.stack = [0] * self.__LEVEL_OF_STACK
         self.sp = 0x0
         self.key = [0] * self.__NUM_OF_KEYS
+        self.__load_chip8_font()
+
+    def __load_chip8_font(self):
+        for i in range(80):
+            self.memory[i] = self.__CHIP8_FONTSET[i]
 
     def load_ROM(self, program):
         pass
