@@ -141,7 +141,9 @@ class Chip8:
                     pixel = self.memory[self.IR + row]
                     for col in range(8):
                         pix_loc = x_reg + col + ((y_reg + row) * self.win_w)
+                        # If the pixel exist in memory, render the pixel
                         if pixel & (0x80 >> col):
+                            # If the pixel is in the display, set VF for collision detection
                             if self.gfx[pix_loc]:
                                 self.V[0xF] = 1
                             self.gfx[pix_loc] ^= 1
@@ -153,7 +155,7 @@ class Chip8:
                         self.sp -= 1
                         self.PC = self.stack[self.sp]
                     case 0x0E0:
-                        self.gfx = [0 for e in self.gfx]
+                        self.gfx = [0 for _ in self.gfx]
             case 0x1:
                 self.PC = nnn
             case 0x2:
