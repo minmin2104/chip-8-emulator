@@ -66,6 +66,83 @@ class Chip8:
             case 0xA:
                 self.IR = nnn
                 self.PC += 2
+            case 0xB:
+                addr = nnn + self.V[0]
+                self.PC = addr
+            case 0x0:
+                match nnn:
+                    case 0x0EE:
+                        self.sp -= 1
+                        self.PC = self.stack[self.sp]
+                    case 0x0E0:
+                        self.gfx = [0 for e in self.gfx]
+            case 0x1:
+                self.PC = nnn
+            case 0x2:
+                self.stack[self.sp] = self.PC
+                self.sp += 1
+                self.PC = nnn
+            case 0x3:
+                if self.V[x_reg] == nn:
+                    self.PC += 4
+            case 0x4:
+                if self.V[x_reg] != nn:
+                    self.PC += 4
+            case 0x5:
+                if self.V[x_reg] == self.V[y_reg]:
+                    self.PC += 4
+            case 0x9:
+                if self.V[x_reg] != self.V[y_reg]:
+                    self.PC += 4
+            case 0x6:
+                self.V[x_reg] = nn
+                self.PC += 2
+            case 0x7:
+                self.V[x_reg] = self.V[x_reg] + nn
+                self.PC += 2
+            case 0x8:
+                match n:
+                    case 0x0:
+                        self.V[x_reg] = self.V[y_reg]
+                        self.PC += 2
+                    case 0x1:
+                        self.V[x_reg] = self.V[x_reg] | self.V[y_reg]
+                        self.PC += 2
+                    case 0x2:
+                        self.V[x_reg] = self.V[x_reg] & self.V[y_reg]
+                        self.PC += 2
+                    case 0x3:
+                        self.V[x_reg] = self.V[x_reg] ^ self.V[y_reg]
+                        self.PC += 2
+                    case 0x4:
+                        sum_xy = self.V[x_reg] + self.V[y_reg]
+                        if sum_xy > 0xFF:
+                            self.V[0xF] = 1
+                        else:
+                            self.V[0xF] = 0
+                        self.PC += 2
+                    case 0x5:
+                        if self.V[x_reg] >= self.V[y_reg]:
+                            self.V[0xF] = 1
+                        else:
+                            self.V[0xF] = 0
+                        self.V[x_reg] = self.V[x_reg] - self.V[y_reg]
+                        self.PC += 2
+                    case 0x7:
+                        if self.V[y_reg] >= self.V[x_reg]:
+                            self.V[0xF] = 1
+                        else:
+                            self.V[0xF] = 0
+                        self.V[x_reg] = self.V[y_reg] - self.V[x_reg]
+                        self.PC += 2
+                    case 0x6:
+                        self.V[0xF] = self.V[x_reg] & 0x01
+                        self.V[x_reg] = self.V[x_reg] >> 1
+                        self.PC += 2
+                    case 0xE:
+                        self.V[0xF] = (self.V[x_reg] & 0x80) >> 1
+                        self.V[x_reg] = (self.V[x_reg] << 1) & 0xFF
+                        self.PC += 2
             case _:
                 print(f"Unknown Opcode: {self.opcode}")
         # Handle timer
