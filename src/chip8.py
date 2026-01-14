@@ -1,3 +1,6 @@
+import random
+
+
 class Chip8:
     __NUM_OF_REGISTERS = 16
     __NUM_OF_KEYS = 16
@@ -23,6 +26,9 @@ class Chip8:
             ]
 
     def __init__(self, win_h, win_w):
+        self.win_h = win_h
+        self.win_w = win_w
+        self.draw_flag = False
         self.opcode = 0x0
         self.memory = [0] * self.__MEM_SIZE
         self.V = [0] * self.__NUM_OF_REGISTERS
@@ -66,9 +72,81 @@ class Chip8:
             case 0xA:
                 self.IR = nnn
                 self.PC += 2
+            case 0xF:
+                match nn:
+                    case 0x1E:
+                        self.IR = self.IR + self.V[x_reg]
+                        self.PC += 2
+                    case 0x33:
+                        self.memory[self.IR + 0] = bin(self.V[x_reg] // 100)
+                        self.memory[self.IR + 1] = bin(self.V[x_reg] % 100 // 10)
+                        self.memory[self.IR + 2] = bin(self.V[x_reg] % 10)
+                        self.PC += 2
+                    case 0x55:
+                        idx = self.IR
+                        for i in range(x_reg + 1):
+                            reg_val = self.V[i]
+                            self.memory[idx] = reg_val
+                            idx += 1
+                        self.PC += 2
+                    case 0x65:
+                        idx = self.IR
+                        for i in range(x_reg + 1):
+                            reg_val = self.memory[idx]
+                            self.V[i] = reg_val
+                            idx += 1
+                        self.PC += 2
+                    case 0x0A:
+                        key_pressed = False
+                        for i in range(self.__NUM_OF_KEYS):
+                            if self.key[i]:
+                                self.V[x_reg] = i
+                                key_pressed = True
+                        if not key_pressed:
+                            return
+                        self.PC += 2
+                    case 0x07:
+                        self.V[x_reg] = self.delay_timer
+                        self.PC += 2
+                    case 0x15:
+                        self.delay_timer = self.V[x_reg]
+                        self.PC += 2
+                    case 0x18:
+                        self.sound_timer = self.V[x_reg]
+                        self.PC += 2
+                    case 0x29:
+                        self.IR = self.V[x_reg] * 0x5
+                        self.PC += 2
+            case 0xE:
+                match nn:
+                    case 0x9E:
+                        if self.key[self.V[x_reg]]:
+                            self.PC += 4
+                        else:
+                            self.PC += 2
+                    case 0xA1:
+                        if not self.key[self.V[x_reg]]:
+                            self.PC += 4
+                        else:
+                            self.PC += 2
             case 0xB:
                 addr = nnn + self.V[0]
                 self.PC = addr
+            case 0xC:
+                self.V[x_reg] = random.randbytes(1)[0] & nn
+                self.PC += 2
+            case 0xD:
+                self.V[0xF] = 0
+                for row in range(n):
+                    pixel = self.memory[self.IR + row]
+                    for col in range(8):
+                        pix_loc = x_reg + col + ((y_reg + row) * self.win_w)
+                        if pixel & (0x80 >> col):
+                            if self.gfx[pix_loc]:
+                                self.V[0xF] = 1
+                            self.gfx[pix_loc] ^= 1
+                self.draw_flag = True
+                self.PC += 2
             case 0x0:
                 match nnn:
                     case 0x0EE:
